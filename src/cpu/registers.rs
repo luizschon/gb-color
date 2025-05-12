@@ -36,7 +36,7 @@ macro_rules! make_registers_struct {
 
             /// Gets the `acc` register value. Commonly refered "register A".
             #[inline]
-            pub fn get_acc(&self) -> u8 {
+            pub fn acc(&self) -> u8 {
                 self.acc
             }
 
@@ -50,7 +50,7 @@ macro_rules! make_registers_struct {
                 $(
                     #[doc = concat!("Gets the `", stringify!($high), "` register value.")]
                     #[inline]
-                    pub fn [<get_ $high>](&self) -> u8 {
+                    pub fn $high(&self) -> u8 {
                         self.$high
                     }
 
@@ -62,7 +62,7 @@ macro_rules! make_registers_struct {
 
                     #[doc = concat!("Gets the `", stringify!($low), "` register value.")]
                     #[inline]
-                    pub fn [<get_ $low>](&self) -> u8 {
+                    pub fn $low(&self) -> u8 {
                         self.$low
                     }
 
@@ -74,7 +74,7 @@ macro_rules! make_registers_struct {
 
                     #[doc = concat!("Sets the `", stringify!($high), stringify!($low), "` 16 bit register value.")]
                     #[inline]
-                    pub fn [<get_ $high $low>](&self) -> u16 {
+                    pub fn [<$high $low>](&self) -> u16 {
                         ((self.$high as u16) << 8) | self.$low as u16
                     }
 
@@ -108,16 +108,16 @@ mod tests {
             h: 0xF3,
             l: 0x02,
         };
-        assert_eq!(regs.get_acc(), 0xF0);
-        assert_eq!(regs.get_b(), 0xF1);
-        assert_eq!(regs.get_c(), 0x00);
-        assert_eq!(regs.get_bc(), 0xF100);
-        assert_eq!(regs.get_d(), 0xF2);
-        assert_eq!(regs.get_e(), 0x01);
-        assert_eq!(regs.get_de(), 0xF201);
-        assert_eq!(regs.get_h(), 0xF3);
-        assert_eq!(regs.get_l(), 0x02);
-        assert_eq!(regs.get_hl(), 0xF302);
+        assert_eq!(regs.acc(), 0xF0);
+        assert_eq!(regs.b(), 0xF1);
+        assert_eq!(regs.c(), 0x00);
+        assert_eq!(regs.bc(), 0xF100);
+        assert_eq!(regs.d(), 0xF2);
+        assert_eq!(regs.e(), 0x01);
+        assert_eq!(regs.de(), 0xF201);
+        assert_eq!(regs.h(), 0xF3);
+        assert_eq!(regs.l(), 0x02);
+        assert_eq!(regs.hl(), 0xF302);
     }
 
     #[test]
@@ -127,7 +127,7 @@ mod tests {
         regs.set_bc(0xCAFE);
         regs.set_h(0xAB);
         assert_eq!(regs.acc, 0xFF);
-        assert_eq!(regs.get_bc(), 0xCAFE);
+        assert_eq!(regs.bc(), 0xCAFE);
         assert_eq!(regs.b, 0xCA);
         assert_eq!(regs.c, 0xFE);
         assert_eq!(regs.h, 0xAB);
