@@ -1,6 +1,6 @@
 use paste::paste;
 
-/// Macro that builds the `Register` struct and implements `setter` and `getter`
+/// Macro that builds the [Registers] struct and implements `setter` and `getter`
 /// methods for it's fields.
 macro_rules! make_registers_struct {
     ($($high:ident $low:ident),*) => {
@@ -29,7 +29,7 @@ macro_rules! make_registers_struct {
 
         #[allow(dead_code)]
         impl Registers {
-            /// Construct as new `Registers` struct with all values zeroed.
+            /// Construct as new [Registers] struct with all values zeroed.
             pub fn new() -> Self {
                 Default::default()
             }
@@ -102,17 +102,20 @@ make_registers_struct!(b c, d e, h l);
 #[derive(Debug, Default)]
 pub struct Flags(u8);
 
+/// Macro that implements `setter`, `getter` and `clear` methods for the flags
+/// in the [Flags] struct.
 macro_rules! impl_flags_struct {
     ($($flag:ident: $pos:literal),*) => {
         #[allow(dead_code)]
         impl Flags {
-            /// Constructs a new `Flags` struct, with zeroed values
+            /// Constructs a new [Flags] struct, with zeroed values
             pub fn new() -> Self {
                 Default::default()
             }
 
-            /// Sets the flags register to a `u8` value. It's required that the
-            /// lower 4 bits are always zeroed, so these bits are ignored.
+            /// Sets the flags register to a [u8] value. It's required that the
+            /// lower 4 bits of the flags register are always zeroed, so these
+            /// bits are ignored.
             #[inline]
             pub fn set(&mut self, val: u8) {
                 // The first 4 bits should always be zeroed.
