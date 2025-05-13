@@ -19,7 +19,7 @@ use super::registers::Register8;
 pub enum ArithSource {
     /// An 8-bit register.
     Reg(Register8),
-    /// An 16-bit address intro the GameBoy's memory, read from the HL register.
+    /// An 16-bit address into the GameBoy's memory, read from the HL register.
     Addr,
     /// A 8-bit literal.
     Immediate8(u8),
@@ -43,7 +43,7 @@ impl ArithSource {
         }
     }
 
-    pub fn from_byte(val: u8) -> Self {
+    pub fn from_literal(val: u8) -> Self {
         Self::Immediate8(val)
     }
 }
@@ -71,29 +71,46 @@ impl Instruction {
         // https://gbdev.io/pandocs/CPU_Instruction_Set.html
         match block {
             // Block 0
-            0 => {
-                todo!()
-            }
+            0 => todo!(),
             // Block 1: register to register load + halt
-            1 => {
-                todo!()
-            }
+            1 => todo!(),
             // Block 2: 8-bit arithmetic instructions with registers.
-            2 => {
-                // The opcode without the bits representing the block and the
-                // source register.
-                let instr = (opcode & 0b00111000) >> 3;
-
-                match instr {
-                    0 => Ok(Instruction::Add(ArithSource::from_opcode(opcode))),
-                    _ if instr > 7 => unreachable!(),
-                    _ => todo!(),
-                }
-            }
-            3 => {
-                todo!()
-            }
+            2 => parse_block_2_instr(opcode),
+            3 => parse_block_3_instr(opcode, rest.first().copied()),
             _ => unreachable!(),
         }
     }
+}
+
+fn parse_block_2_instr(opcode: u8) -> Result<Instruction, InstructionError> {
+    // The opcode without the bits representing the block and the
+    // source register.
+    let instr = (opcode & 0b00111000) >> 3;
+
+    let parsed = match instr {
+        0 => Instruction::Add(ArithSource::from_opcode(opcode)),
+        _ if instr > 7 => unreachable!(),
+        _ => todo!(),
+    };
+    Ok(parsed)
+}
+
+fn parse_block_3_instr(opcode: u8, next: Option<u8>) -> Result<Instruction, InstructionError> {
+    let is_arithmetic = opcode & 0b00000111 == 0b110;
+
+    let parsed = if is_arithmetic {
+        // The opcode without the bits representing the block and the
+        // arithmetic instruction bits
+        let instr = (opcode & 0b00111000) >> 3;
+        let immediate = next.ok_or(InstructionError::Invalid)?;
+
+        match instr {
+            0 => Instruction::Add(ArithSource::from_literal(immediate)),
+            _ if instr > 7 => unreachable!(),
+            _ => todo!(),
+        }
+    } else {
+        todo!()
+    };
+    Ok(parsed)
 }
