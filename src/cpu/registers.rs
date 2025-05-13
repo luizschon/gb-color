@@ -1,6 +1,6 @@
 use paste::paste;
 
-/// Macro that builds the [Registers] struct and implements `setter` and `getter`
+/// Macro that builds the [RawRegisters] struct and implements `setter` and `getter`
 /// methods for it's fields.
 macro_rules! make_registers_struct {
     ($($high:ident $low:ident),*) => {
@@ -17,8 +17,7 @@ macro_rules! make_registers_struct {
         /// | `DE`            | `D`         | `E`        |
         /// | `HL`            | `H`         | `L`        |
         #[derive(Debug, Default)]
-        #[allow(dead_code)]
-        pub struct Registers {
+        pub struct RawRegisters {
             /// Accumulator register, i.e. the `A` register.
             acc: u8,
             $(
@@ -27,9 +26,8 @@ macro_rules! make_registers_struct {
             )*
         }
 
-        #[allow(dead_code)]
-        impl Registers {
-            /// Construct as new [Registers] struct with all values zeroed.
+        impl RawRegisters {
+            /// Construct as new [RawRegisters] struct with all values zeroed.
             pub fn new() -> Self {
                 Default::default()
             }
@@ -84,6 +82,14 @@ macro_rules! make_registers_struct {
 }
 
 make_registers_struct!(b c, d e, h l);
+
+#[rustfmt::skip]
+/// Represents a named CPU register.
+#[derive(Debug, Clone, Copy)]
+pub enum Register {
+    Acc, B, C, D, E, H, L,
+    BC, DE, HL
+}
 
 /// Representation of the flags register of the GameBoy's CPU.
 ///
@@ -158,7 +164,7 @@ mod tests {
     #[test]
     fn test_getters() {
         #[rustfmt::skip]
-        let regs = Registers {
+        let regs = RawRegisters {
             acc: 0xF0, b: 0xF1, c: 0x00, d: 0xF2,
             e: 0x01, h: 0xF3, l: 0x02,
         };
@@ -176,7 +182,7 @@ mod tests {
 
     #[test]
     fn test_setters() {
-        let mut regs = Registers::new();
+        let mut regs = RawRegisters::new();
         regs.set_acc(0xFF);
         regs.set_bc(0xCAFE);
         regs.set_h(0xAB);
