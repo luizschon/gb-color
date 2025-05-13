@@ -85,7 +85,7 @@ make_registers_struct!(b c, d e, h l);
 
 #[rustfmt::skip]
 /// Represents a named CPU register.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Register {
     Acc, B, C, D, E, H, L,
     BC, DE, HL
@@ -93,14 +93,14 @@ pub enum Register {
 
 #[rustfmt::skip]
 /// Represents a named CPU 8-bit register.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Register8 {
     Acc, B, C, D, E, H, L,
 }
 
 #[rustfmt::skip]
 /// Represents a named CPU 16-bit register.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Register16 {
     BC, DE, HL
 }

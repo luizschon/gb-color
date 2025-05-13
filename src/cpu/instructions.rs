@@ -15,14 +15,14 @@ use super::registers::Register8;
 /// (block 2)[https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-2-8-bit-arithmetic]
 /// and some (block 3)[https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-3]
 /// instructions.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArithSource {
     /// An 8-bit register.
     Reg(Register8),
     /// An 16-bit address into the GameBoy's memory, read from the HL register.
     Addr,
     /// A 8-bit literal.
-    Immediate8(u8),
+    Immediate(u8),
 }
 
 impl ArithSource {
@@ -44,15 +44,16 @@ impl ArithSource {
     }
 
     pub fn from_literal(val: u8) -> Self {
-        Self::Immediate8(val)
+        Self::Immediate(val)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Instruction {
     Add(ArithSource),
 }
 
+#[derive(Debug, PartialEq)]
 pub enum InstructionError {
     Invalid,
 }
@@ -113,4 +114,45 @@ fn parse_block_3_instr(opcode: u8, next: Option<u8>) -> Result<Instruction, Inst
         todo!()
     };
     Ok(parsed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_block_2_instr_builder() {
+        use Instruction::*;
+        use Register8::*;
+
+        // ADD A, r8
+        assert_eq!(
+            Instruction::from_bytes(&[0x80]),
+            Ok(Add(ArithSource::Reg(B)))
+        );
+        assert_eq!(
+            Instruction::from_bytes(&[0x81]),
+            Ok(Add(ArithSource::Reg(C)))
+        );
+        assert_eq!(Instruction::from_bytes(&[0x86]), Ok(Add(ArithSource::Addr)));
+        assert_eq!(
+            Instruction::from_bytes(&[0x87]),
+            Ok(Add(ArithSource::Reg(Acc)))
+        );
+    }
+
+    #[test]
+    fn test_block_3_instr() {
+        use Instruction::*;
+
+        // ADD A, imm8
+        assert_eq!(
+            Instruction::from_bytes(&[0xC6, 0xFF]),
+            Ok(Add(ArithSource::Immediate(0xFF)))
+        );
+        assert_eq!(
+            Instruction::from_bytes(&[0xC6, 0xAB]),
+            Ok(Add(ArithSource::Immediate(0xAB)))
+        );
+    }
 }
