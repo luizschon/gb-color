@@ -91,6 +91,20 @@ pub enum Register {
     BC, DE, HL
 }
 
+#[rustfmt::skip]
+/// Represents a named CPU 8-bit register.
+#[derive(Debug, Clone, Copy)]
+pub enum Register8 {
+    Acc, B, C, D, E, H, L,
+}
+
+#[rustfmt::skip]
+/// Represents a named CPU 16-bit register.
+#[derive(Debug, Clone, Copy)]
+pub enum Register16 {
+    BC, DE, HL
+}
+
 /// Representation of the flags register of the GameBoy's CPU.
 ///
 /// | Bit 7 | Bit 6       | Bit 5      | Bit 5   | Bits 4-0      |
