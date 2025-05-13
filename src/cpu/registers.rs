@@ -19,7 +19,7 @@ macro_rules! make_registers_struct {
         #[derive(Debug, Default)]
         #[allow(dead_code)]
         pub struct Registers {
-            /// Accumulator register, i.e. the A register.
+            /// Accumulator register, i.e. the `A` register.
             acc: u8,
             $(
                 $high: u8,
@@ -34,13 +34,11 @@ macro_rules! make_registers_struct {
                 Default::default()
             }
 
-            /// Gets the `acc` register value. Commonly refered "register A".
             #[inline]
             pub fn acc(&self) -> u8 {
                 self.acc
             }
 
-            /// Sets the `acc` register value. Commonly refered as "register A".
             #[inline]
             pub fn set_acc(&mut self, val: u8) {
                 self.acc = val
@@ -48,37 +46,31 @@ macro_rules! make_registers_struct {
 
             paste! {
                 $(
-                    #[doc = concat!("Gets the `", stringify!($high), "` register value.")]
                     #[inline]
                     pub fn $high(&self) -> u8 {
                         self.$high
                     }
 
-                    #[doc = concat!("Sets the `", stringify!($high), "` register value.")]
                     #[inline]
                     pub fn [<set_ $high>](&mut self, val: u8) {
                         self.$high = val;
                     }
 
-                    #[doc = concat!("Gets the `", stringify!($low), "` register value.")]
                     #[inline]
                     pub fn $low(&self) -> u8 {
                         self.$low
                     }
 
-                    #[doc = concat!("Sets the `", stringify!($low), "` register value.")]
                     #[inline]
                     pub fn [<set_ $low>](&mut self, val: u8) {
                         self.$low = val;
                     }
 
-                    #[doc = concat!("Sets the `", stringify!($high), stringify!($low), "` 16 bit register value.")]
                     #[inline]
                     pub fn [<$high $low>](&self) -> u16 {
                         ((self.$high as u16) << 8) | self.$low as u16
                     }
 
-                    #[doc = concat!("Sets the `", stringify!($high), stringify!($low), "` 16 bit register value.")]
                     #[inline]
                     pub fn [<set_ $high $low>](&mut self, val: u16) {
                         let (low, high) = ((val & 0xFF) as u8, (val >> 8) as u8);
@@ -114,7 +106,7 @@ macro_rules! impl_flags_struct {
     ($($flag:ident: $pos:literal),*) => {
         #[allow(dead_code)]
         impl Flags {
-            /// Constructs a new Flags struct, with zeroed values
+            /// Constructs a new `Flags` struct, with zeroed values
             pub fn new() -> Self {
                 Default::default()
             }
@@ -127,7 +119,6 @@ macro_rules! impl_flags_struct {
                 self.0 = val & 0xF0;
             }
 
-            /// Clears all flags
             #[inline]
             pub fn clear(&mut self) {
                 self.0 = 0x00;
