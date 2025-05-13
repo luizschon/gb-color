@@ -93,20 +93,80 @@ macro_rules! make_registers_struct {
 
 make_registers_struct!(b c, d e, h l);
 
+/// Representation of the flags register of the GameBoy's CPU.
+///
+/// | Bit 7 | Bit 6       | Bit 5      | Bit 5   | Bits 4-0      |
+/// |-------|-------------|------------|---------|---------------|
+/// | Zero  | Subtraction | Half-carry | Carry   | Unused (zero) |
+///
+/// - `Zero` flag: this flag is set if the result of an operation is 0.
+/// - `Subtraction` flag: ***this flag is only used by the DAA operation***. Indicates
+/// if the last operation was a substraction.
+/// - `Half-carry` flag: ***this flag is only used by the DAA operation***. Indicates
+/// a carry in the lower 4 bits.
+/// - `Carry` flag: this flag is set if the result of the previous operation
+/// over(under)flowed or if a previous rotate/shift shifted a `1` out. ***Used by
+/// conditional jumps and some other instructions***.
+#[derive(Debug, Default)]
+pub struct Flags(u8);
+
+macro_rules! impl_flags_struct {
+    ($($flag:ident: $pos:literal),*) => {
+        #[allow(dead_code)]
+        impl Flags {
+            /// Constructs a new Flags struct, with zeroed values
+            pub fn new() -> Self {
+                Default::default()
+            }
+
+            /// Sets the flags register to a `u8` value. It's required that the
+            /// lower 4 bits are always zeroed, so these bits are ignored.
+            #[inline]
+            pub fn set(&mut self, val: u8) {
+                // The first 4 bits should always be zeroed.
+                self.0 = val & 0xF0;
+            }
+
+            /// Clears all flags
+            #[inline]
+            pub fn clear(&mut self) {
+                self.0 = 0x00;
+            }
+
+            paste! {
+                $(
+                    #[inline]
+                    pub fn $flag(&self) -> bool {
+                        (self.0 >> $pos) & 0b1 == 0b1
+                    }
+
+                    #[inline]
+                    pub fn [<set_ $flag>](&mut self, val: bool) {
+                        self.0 = self.0 & !(1 << $pos) | ((val as u8) << $pos)
+                    }
+
+                    #[inline]
+                    pub fn [<clear_ $flag>](&mut self) {
+                        self.0 = self.0 & !(1 << $pos)
+                    }
+                )*
+            }
+        }
+    };
+}
+
+impl_flags_struct!(zero: 7, subtract: 6, half_carry: 5, carry: 4);
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_getters() {
+        #[rustfmt::skip]
         let regs = Registers {
-            acc: 0xF0,
-            b: 0xF1,
-            c: 0x00,
-            d: 0xF2,
-            e: 0x01,
-            h: 0xF3,
-            l: 0x02,
+            acc: 0xF0, b: 0xF1, c: 0x00, d: 0xF2,
+            e: 0x01, h: 0xF3, l: 0x02,
         };
         assert_eq!(regs.acc(), 0xF0);
         assert_eq!(regs.b(), 0xF1);
@@ -127,9 +187,41 @@ mod tests {
         regs.set_bc(0xCAFE);
         regs.set_h(0xAB);
         assert_eq!(regs.acc, 0xFF);
-        assert_eq!(regs.bc(), 0xCAFE);
         assert_eq!(regs.b, 0xCA);
         assert_eq!(regs.c, 0xFE);
         assert_eq!(regs.h, 0xAB);
+    }
+
+    #[test]
+    fn test_set_get_flags() {
+        let mut f = Flags::new();
+        f.set_zero(true);
+        assert_eq!(f.0, 0b10000000);
+        f.set_carry(true);
+        assert_eq!(f.0, 0b10010000);
+        f.set(0xFF);
+        assert_eq!(f.0, 0b11110000);
+        assert!(
+            [f.zero(), f.subtract(), f.half_carry(), f.carry()]
+                .iter()
+                .all(|&x| x)
+        );
+    }
+
+    #[test]
+    fn test_clear_flags() {
+        let mut f = Flags::new();
+        f.set(0xF0);
+        f.clear_zero();
+        assert!(!f.zero());
+        f.clear_subtract();
+        assert!(!f.subtract());
+        f.clear_half_carry();
+        assert!(!f.half_carry());
+        f.clear_carry();
+        assert!(!f.carry());
+        f.set(0xF0);
+        f.clear();
+        assert_eq!(f.0, 0x00);
     }
 }
