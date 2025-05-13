@@ -1,5 +1,5 @@
 //! The CPU instructions for the GameBoy can be organized in
-//! (blocks)[https://gbdev.io/pandocs/CPU_Instruction_Set.html], where the
+//! [blocks](https://gbdev.io/pandocs/CPU_Instruction_Set.html), where the
 //! block number is encoded in the 2 MSB's of the opcode:
 //!
 //! | Block | Opcode bit 7 | Opcode bit 6 | Opcode bits 5-0 |
@@ -12,8 +12,8 @@
 use super::registers::Register8;
 
 /// Source for 8-bit arithmetic operation, such as the
-/// (block 2)[https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-2-8-bit-arithmetic]
-/// and some (block 3)[https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-3]
+/// [block 2](https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-2-8-bit-arithmetic)
+/// and some [block 3](https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-3)
 /// instructions.
 #[derive(Debug, PartialEq)]
 pub enum ArithSource {
