@@ -1,5 +1,7 @@
 use paste::paste;
 
+use super::CpuState;
+
 /// Macro that builds the [RawRegisters] struct and implements `setter` and `getter`
 /// methods for it's fields.
 macro_rules! make_registers_struct {
@@ -103,6 +105,55 @@ pub enum Register8 {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Register16 {
     BC, DE, HL
+}
+
+pub trait RwRegister<T> {
+    fn read(&self, state: &CpuState) -> T;
+    fn write(&self, state: &mut CpuState, val: T);
+}
+
+impl RwRegister<u8> for Register8 {
+    fn read(&self, state: &CpuState) -> u8 {
+        match *self {
+            Self::Acc => state.regs.acc(),
+            Self::B => state.regs.b(),
+            Self::C => state.regs.c(),
+            Self::D => state.regs.d(),
+            Self::E => state.regs.e(),
+            Self::H => state.regs.h(),
+            Self::L => state.regs.l(),
+        }
+    }
+
+    fn write(&self, state: &mut CpuState, val: u8) {
+        match *self {
+            Self::Acc => state.regs.set_acc(val),
+            Self::B => state.regs.set_b(val),
+            Self::C => state.regs.set_c(val),
+            Self::D => state.regs.set_d(val),
+            Self::E => state.regs.set_e(val),
+            Self::H => state.regs.set_h(val),
+            Self::L => state.regs.set_l(val),
+        }
+    }
+}
+
+impl RwRegister<u16> for Register16 {
+    fn read(&self, state: &CpuState) -> u16 {
+        match *self {
+            Self::BC => state.regs.bc(),
+            Self::DE => state.regs.de(),
+            Self::HL => state.regs.hl(),
+        }
+    }
+
+    fn write(&self, state: &mut CpuState, val: u16) {
+        match *self {
+            Self::BC => state.regs.set_bc(val),
+            Self::DE => state.regs.set_de(val),
+            Self::HL => state.regs.set_hl(val),
+        }
+    }
 }
 
 /// Representation of the flags register of the GameBoy's CPU.
