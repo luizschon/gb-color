@@ -1,9 +1,10 @@
 use crate::cpu::CpuState;
 
-use super::{
-    Executable,
-    operands::{ArithSource, Operand},
-};
+use super::operands::{ArithSource, Operand};
+
+pub trait Executable: Sized {
+    fn execute(&self, state: &mut CpuState);
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Add(pub ArithSource);
