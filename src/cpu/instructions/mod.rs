@@ -9,45 +9,14 @@
 //! | 2     | 1            | 0            | X X X X X X     |
 //! | 3     | 1            | 1            | X X X X X X     |
 
-use super::registers::Register8;
+use operands::ArithSource;
 
-/// Source for 8-bit arithmetic operation, such as the
-/// [block 2](https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-2-8-bit-arithmetic)
-/// and some [block 3](https://gbdev.io/pandocs/CPU_Instruction_Set.html#block-3)
-/// instructions.
-#[derive(Debug, PartialEq)]
-pub enum ArithSource {
-    /// An 8-bit register.
-    Reg(Register8),
-    /// An 16-bit address into the GameBoy's memory, read from the HL register.
-    Addr,
-    /// A 8-bit literal.
-    Immediate(u8),
-}
+use super::CpuState;
 
-impl ArithSource {
-    pub fn from_opcode(opcode: u8) -> Self {
-        // The three last bits of the opcode
-        let reg_idx = opcode & 0b00000111;
+mod instructions_fn;
+mod operands;
 
-        match reg_idx {
-            0 => Self::Reg(Register8::B),
-            1 => Self::Reg(Register8::C),
-            2 => Self::Reg(Register8::D),
-            3 => Self::Reg(Register8::E),
-            4 => Self::Reg(Register8::H),
-            5 => Self::Reg(Register8::L),
-            6 => Self::Addr,
-            7 => Self::Reg(Register8::Acc),
-            _ => unreachable!(),
-        }
-    }
-
-    pub fn from_literal(val: u8) -> Self {
-        Self::Immediate(val)
-    }
-}
-
+#[rustfmt::skip]
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
     Add(ArithSource),
@@ -59,8 +28,8 @@ pub enum InstructionError {
 }
 
 impl Instruction {
-    pub fn from_bytes(mem_slice: &[u8]) -> Result<Self, InstructionError> {
-        let [first, rest @ ..] = mem_slice else {
+    pub fn from_bytes(rom_slice: &[u8]) -> Result<Self, InstructionError> {
+        let [first, rest @ ..] = rom_slice else {
             return Err(InstructionError::Invalid);
         };
 
@@ -77,10 +46,14 @@ impl Instruction {
             1 => todo!(),
             // Block 2: 8-bit arithmetic instructions with registers.
             2 => parse_block_2_instr(opcode),
+            // Block 2: 8-bit immediate-mode arithmetic, jumps, stack-pointer
+            // manipulation, etc.
             3 => parse_block_3_instr(opcode, rest.first().copied()),
             _ => unreachable!(),
         }
     }
+
+    pub fn execute(&self, state: &mut CpuState) {}
 }
 
 fn parse_block_2_instr(opcode: u8) -> Result<Instruction, InstructionError> {
@@ -116,14 +89,19 @@ fn parse_block_3_instr(opcode: u8, next: Option<u8>) -> Result<Instruction, Inst
     Ok(parsed)
 }
 
+pub trait InstructionHandler {
+    fn execute(&self, state: &mut CpuState);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_block_2_instr_builder() {
+        use crate::cpu::registers::Register8::*;
         use Instruction::*;
-        use Register8::*;
+        use operands::*;
 
         // ADD A, r8
         assert_eq!(
