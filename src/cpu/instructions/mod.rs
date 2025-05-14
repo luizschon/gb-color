@@ -10,12 +10,15 @@
 //! | 3     | 1            | 1            | X X X X X X     |
 
 use instructions_fn::*;
-use operands::ArithSource;
+use parsers::Parse;
 
 use super::CpuState;
 
 mod instructions_fn;
 mod operands;
+mod parsers;
+
+type Opcode = u8;
 
 pub trait Executable: Sized {
     fn execute(&self, state: &mut CpuState);
@@ -27,120 +30,79 @@ pub enum Instruction {
     AddInstr(Add),
 }
 
-#[derive(Debug, PartialEq)]
-pub enum ParseError {
-    Invalid,
-}
-
-impl Instruction {
-    fn from_bytes(rom_slice: &[u8]) -> Result<Self, ParseError> {
-        let [first, rest @ ..] = rom_slice else {
-            return Err(ParseError::Invalid);
-        };
-
-        let block = dbg!((*first & 0xC0) >> 6);
-        let is_prefixed = *first == 0xCB;
-        let opcode = if is_prefixed { todo!() } else { *first };
-
-        // Opcodes can be organized in blocks 00-03, as in
-        // https://gbdev.io/pandocs/CPU_Instruction_Set.html
-        match block {
-            // Block 0
-            0 => todo!(),
-            // Block 1: register to register load + halt
-            1 => todo!(),
-            // Block 2: 8-bit arithmetic instructions with registers.
-            2 => parse_block_2_instr(opcode),
-            // Block 2: 8-bit immediate-mode arithmetic, jumps, stack-pointer
-            // manipulation, etc.
-            3 => parse_block_3_instr(opcode, rest.first().copied()),
-            _ => unreachable!(),
-        }
-    }
-}
-
-fn parse_block_2_instr(opcode: u8) -> Result<Instruction, ParseError> {
-    use Instruction::*;
-    // The opcode without the bits encoding the block and the source register.
-    let instr = (opcode & 0b00111000) >> 3;
-
-    let parsed = match instr {
-        0 => AddInstr(Add::with_source(ArithSource::from_opcode(opcode))),
-        _ if instr > 7 => unreachable!(),
-        _ => todo!(),
-    };
-    Ok(parsed)
-}
-
-fn parse_block_3_instr(opcode: u8, next: Option<u8>) -> Result<Instruction, ParseError> {
-    use Instruction::*;
-    let is_arithmetic = opcode & 0b00000111 == 0b110;
-
-    let parsed = if is_arithmetic {
-        // The opcode without the bits encoding the block and the arithmetic
-        // instruction.
-        let instr = (opcode & 0b00111000) >> 3;
-        let immediate = next.ok_or(ParseError::Invalid)?;
-
-        match instr {
-            0 => AddInstr(Add::with_source(ArithSource::from_literal(immediate))),
-            _ if instr > 7 => unreachable!(),
-            _ => todo!(),
-        }
-    } else {
-        todo!()
-    };
-    Ok(parsed)
-}
-
 impl Executable for Instruction {
     fn execute(&self, state: &mut CpuState) {
         use Instruction::*;
-
         match self {
             AddInstr(i) => i.execute(state),
         }
     }
 }
 
+pub enum InstructionParser {
+    Block0Parser(parsers::Block0),
+    Block1Parser(parsers::Block1),
+    Block2Parser(parsers::Block2),
+    Block3Parser(parsers::Block3),
+    PrefixedParser(parsers::Prefixed),
+}
+
+impl From<Opcode> for InstructionParser {
+    fn from(opcode: Opcode) -> Self {
+        let block = (opcode & 0xC0) >> 6;
+        let is_prefixed = opcode == 0xCB;
+
+        if is_prefixed {
+            return Self::PrefixedParser(parsers::Prefixed);
+        }
+
+        match block {
+            0 => Self::Block0Parser(parsers::Block0),
+            1 => Self::Block1Parser(parsers::Block1),
+            2 => Self::Block2Parser(parsers::Block2),
+            3 => Self::Block3Parser(parsers::Block3),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Parse for InstructionParser {
+    type Error = parsers::ParseError;
+
+    fn decode(self, rom_slice: &[u8]) -> Result<Instruction, Self::Error> {
+        match self {
+            Self::Block0Parser(p) => p.decode(rom_slice),
+            Self::Block1Parser(p) => p.decode(rom_slice),
+            Self::Block2Parser(p) => p.decode(rom_slice),
+            Self::Block3Parser(p) => p.decode(rom_slice),
+            Self::PrefixedParser(p) => p.decode(rom_slice),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+
     use super::*;
-    use crate::cpu::registers::Register8::*;
     use Instruction::*;
-    use operands::*;
 
     #[test]
-    fn test_block_2_instr_builder() {
-        // ADD A, r8
-        assert_eq!(
-            Instruction::from_bytes(&[0x80]),
-            Ok(AddInstr(Add(ArithSource::Reg(B))))
-        );
-        assert_eq!(
-            Instruction::from_bytes(&[0x81]),
-            Ok(AddInstr(Add(ArithSource::Reg(C))))
-        );
-        assert_eq!(
-            Instruction::from_bytes(&[0x86]),
-            Ok(AddInstr(Add(ArithSource::Addr)))
-        );
-        assert_eq!(
-            Instruction::from_bytes(&[0x87]),
-            Ok(AddInstr(Add(ArithSource::Reg(Acc))))
-        );
-    }
+    fn test_add_parse() {
+        use crate::cpu::registers::Register8::*;
+        use operands::ArithSource::*;
 
-    #[test]
-    fn test_block_3_instr() {
-        // ADD A, imm8
-        assert_eq!(
-            Instruction::from_bytes(&[0xC6, 0xFF]),
-            Ok(AddInstr(Add(ArithSource::Immediate(0xFF))))
-        );
-        assert_eq!(
-            Instruction::from_bytes(&[0xC6, 0xAB]),
-            Ok(AddInstr(Add(ArithSource::Immediate(0xAB))))
-        );
+        // add a, r8
+        let i = InstructionParser::from(0x80).decode(&[0x80]);
+        assert_eq!(i, Ok(AddInstr(Add(Reg(B)))));
+        let i = InstructionParser::from(0x87).decode(&[0x87]);
+        assert_eq!(i, Ok(AddInstr(Add(Reg(Acc)))));
+        let i = InstructionParser::from(0x86).decode(&[0x86]);
+        assert_eq!(i, Ok(AddInstr(Add(Addr))));
+
+        // add a, imm8
+        let i = InstructionParser::from(0xC6).decode(&[0xC6, 0xFF]);
+        assert_eq!(i, Ok(AddInstr(Add(Immediate(0xFF)))));
+        let i = InstructionParser::from(0xC6).decode(&[0xC6, 0xAB]);
+        assert_eq!(i, Ok(AddInstr(Add(Immediate(0xAB)))));
     }
 }
