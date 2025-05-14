@@ -13,6 +13,14 @@ pub struct CpuState {
 }
 
 impl CpuState {
+    pub fn new() -> Self {
+        Self {
+            pc: 0,
+            sp: 0,
+            flags: Default::default(),
+            regs: Default::default(),
+        }
+    }
     // fn fetch_instruction(&self) -> Instruction {
     //     Instruction::from_bytes()
     // }
