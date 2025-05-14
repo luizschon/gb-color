@@ -41,7 +41,8 @@ mod tests {
     fn test_add() {
         let mut state = CpuState::new();
         state.regs.set_b(0xE1);
-        state.regs.set_h(0x0F);
+        state.regs.set_e(0x0F);
+        state.regs.set_hl(0x0000);
 
         Add(Reg(B)).execute(&mut state);
         assert_eq!(state.regs.acc(), 0xE1);
@@ -49,7 +50,7 @@ mod tests {
         assert!(state.flags.carry() == false);
         assert!(state.flags.half_carry() == false);
 
-        Add(Reg(H)).execute(&mut state);
+        Add(Reg(E)).execute(&mut state);
         assert_eq!(state.regs.acc(), 0xF0);
         assert!(state.flags.zero() == false);
         assert!(state.flags.carry() == false);
@@ -66,5 +67,11 @@ mod tests {
         assert!(state.flags.zero() == true);
         assert!(state.flags.carry() == true);
         assert!(state.flags.half_carry() == true);
+
+        Add(Addr).execute(&mut state);
+        assert_eq!(state.regs.acc(), 0x00);
+        assert!(state.flags.zero() == true);
+        assert!(state.flags.carry() == false);
+        assert!(state.flags.half_carry() == false);
     }
 }
