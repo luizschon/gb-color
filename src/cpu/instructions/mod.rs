@@ -9,6 +9,7 @@
 //! | 2     | 1            | 0            | X X X X X X     |
 //! | 3     | 1            | 1            | X X X X X X     |
 
+use instructions_fn::*;
 use operands::ArithSource;
 
 use super::CpuState;
@@ -16,21 +17,25 @@ use super::CpuState;
 mod instructions_fn;
 mod operands;
 
+pub trait Executable: Sized {
+    fn execute(&self, state: &mut CpuState);
+}
+
 #[rustfmt::skip]
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
-    Add(ArithSource),
+    AddInstr(Add),
 }
 
 #[derive(Debug, PartialEq)]
-pub enum InstructionError {
+pub enum ParseError {
     Invalid,
 }
 
 impl Instruction {
-    pub fn from_bytes(rom_slice: &[u8]) -> Result<Self, InstructionError> {
+    fn from_bytes(rom_slice: &[u8]) -> Result<Self, ParseError> {
         let [first, rest @ ..] = rom_slice else {
-            return Err(InstructionError::Invalid);
+            return Err(ParseError::Invalid);
         };
 
         let block = dbg!((*first & 0xC0) >> 6);
@@ -52,34 +57,33 @@ impl Instruction {
             _ => unreachable!(),
         }
     }
-
-    pub fn execute(&self, state: &mut CpuState) {}
 }
 
-fn parse_block_2_instr(opcode: u8) -> Result<Instruction, InstructionError> {
-    // The opcode without the bits representing the block and the
-    // source register.
+fn parse_block_2_instr(opcode: u8) -> Result<Instruction, ParseError> {
+    use Instruction::*;
+    // The opcode without the bits encoding the block and the source register.
     let instr = (opcode & 0b00111000) >> 3;
 
     let parsed = match instr {
-        0 => Instruction::Add(ArithSource::from_opcode(opcode)),
+        0 => AddInstr(Add::with_source(ArithSource::from_opcode(opcode))),
         _ if instr > 7 => unreachable!(),
         _ => todo!(),
     };
     Ok(parsed)
 }
 
-fn parse_block_3_instr(opcode: u8, next: Option<u8>) -> Result<Instruction, InstructionError> {
+fn parse_block_3_instr(opcode: u8, next: Option<u8>) -> Result<Instruction, ParseError> {
+    use Instruction::*;
     let is_arithmetic = opcode & 0b00000111 == 0b110;
 
     let parsed = if is_arithmetic {
-        // The opcode without the bits representing the block and the
-        // arithmetic instruction bits
+        // The opcode without the bits encoding the block and the arithmetic
+        // instruction.
         let instr = (opcode & 0b00111000) >> 3;
-        let immediate = next.ok_or(InstructionError::Invalid)?;
+        let immediate = next.ok_or(ParseError::Invalid)?;
 
         match instr {
-            0 => Instruction::Add(ArithSource::from_literal(immediate)),
+            0 => AddInstr(Add::with_source(ArithSource::from_literal(immediate))),
             _ if instr > 7 => unreachable!(),
             _ => todo!(),
         }
@@ -89,48 +93,54 @@ fn parse_block_3_instr(opcode: u8, next: Option<u8>) -> Result<Instruction, Inst
     Ok(parsed)
 }
 
-pub trait InstructionHandler {
-    fn execute(&self, state: &mut CpuState);
+impl Executable for Instruction {
+    fn execute(&self, state: &mut CpuState) {
+        use Instruction::*;
+
+        match self {
+            AddInstr(i) => i.execute(state),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cpu::registers::Register8::*;
+    use Instruction::*;
+    use operands::*;
 
     #[test]
     fn test_block_2_instr_builder() {
-        use crate::cpu::registers::Register8::*;
-        use Instruction::*;
-        use operands::*;
-
         // ADD A, r8
         assert_eq!(
             Instruction::from_bytes(&[0x80]),
-            Ok(Add(ArithSource::Reg(B)))
+            Ok(AddInstr(Add(ArithSource::Reg(B))))
         );
         assert_eq!(
             Instruction::from_bytes(&[0x81]),
-            Ok(Add(ArithSource::Reg(C)))
+            Ok(AddInstr(Add(ArithSource::Reg(C))))
         );
-        assert_eq!(Instruction::from_bytes(&[0x86]), Ok(Add(ArithSource::Addr)));
+        assert_eq!(
+            Instruction::from_bytes(&[0x86]),
+            Ok(AddInstr(Add(ArithSource::Addr)))
+        );
         assert_eq!(
             Instruction::from_bytes(&[0x87]),
-            Ok(Add(ArithSource::Reg(Acc)))
+            Ok(AddInstr(Add(ArithSource::Reg(Acc))))
         );
     }
 
     #[test]
     fn test_block_3_instr() {
-        use Instruction::*;
-
         // ADD A, imm8
         assert_eq!(
             Instruction::from_bytes(&[0xC6, 0xFF]),
-            Ok(Add(ArithSource::Immediate(0xFF)))
+            Ok(AddInstr(Add(ArithSource::Immediate(0xFF))))
         );
         assert_eq!(
             Instruction::from_bytes(&[0xC6, 0xAB]),
-            Ok(Add(ArithSource::Immediate(0xAB)))
+            Ok(AddInstr(Add(ArithSource::Immediate(0xAB))))
         );
     }
 }

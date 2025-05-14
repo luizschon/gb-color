@@ -1,16 +1,21 @@
 use crate::cpu::CpuState;
 
-use super::{Instruction, operands::Operand};
+use super::{
+    Executable,
+    operands::{ArithSource, Operand},
+};
 
-type InstructionFn = fn(&Instruction, &mut CpuState) -> ();
+#[derive(Debug, PartialEq)]
+pub struct Add(pub ArithSource);
 
-pub trait Executable {
-    fn execute(&self, state: &mut CpuState) {}
+impl Add {
+    pub fn with_source(src: ArithSource) -> Self {
+        Self(src)
+    }
 }
 
-fn add(instr: &Instruction, state: &mut CpuState) {
-    let Instruction::Add(src) = instr else {
-        panic!("Instruction {instr:?} shouldn't be in `add`!")
-    };
-    let operand = src.get_value(state);
+impl Executable for Add {
+    fn execute(&self, state: &mut CpuState) {
+        let operand = self.0.get_value(state);
+    }
 }
