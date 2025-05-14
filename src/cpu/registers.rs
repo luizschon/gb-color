@@ -85,6 +85,11 @@ macro_rules! make_registers_struct {
 
 make_registers_struct!(b c, d e, h l);
 
+pub trait RwRegister<T> {
+    fn read(&self, state: &CpuState) -> T;
+    fn write(&self, state: &mut CpuState, val: T);
+}
+
 #[rustfmt::skip]
 /// Represents a named CPU register.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -93,23 +98,13 @@ pub enum Register {
     BC, DE, HL
 }
 
+type RegIdx = u8;
+
 #[rustfmt::skip]
 /// Represents a named CPU 8-bit register.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Register8 {
     Acc, B, C, D, E, H, L,
-}
-
-#[rustfmt::skip]
-/// Represents a named CPU 16-bit register.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Register16 {
-    BC, DE, HL
-}
-
-pub trait RwRegister<T> {
-    fn read(&self, state: &CpuState) -> T;
-    fn write(&self, state: &mut CpuState, val: T);
 }
 
 impl RwRegister<u8> for Register8 {
@@ -136,6 +131,13 @@ impl RwRegister<u8> for Register8 {
             Self::L => state.regs.set_l(val),
         }
     }
+}
+
+#[rustfmt::skip]
+/// Represents a named CPU 16-bit register.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Register16 {
+    BC, DE, HL
 }
 
 impl RwRegister<u16> for Register16 {

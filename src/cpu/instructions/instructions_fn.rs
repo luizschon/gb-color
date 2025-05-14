@@ -1,9 +1,10 @@
 use crate::cpu::CpuState;
 
-use super::{
-    Executable,
-    operands::{ArithSource, Operand},
-};
+use super::operands::{ArithSource, Operand};
+
+pub trait Executable {
+    fn execute(&self, state: &mut CpuState);
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Add(pub ArithSource);
@@ -21,7 +22,6 @@ impl Executable for Add {
         let (result, did_overflow) = acc.overflowing_add(operand);
 
         state.flags.set_zero(result == 0);
-        state.flags.clear_subtract();
         state.flags.set_carry(did_overflow);
         // If a half carry occured, the resulting nibble will be less than the
         // operand nibble.
