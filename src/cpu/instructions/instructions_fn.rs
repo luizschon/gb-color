@@ -2,7 +2,7 @@ use crate::cpu::CpuState;
 
 use super::operands::{ArithSource, Operand};
 
-pub trait Executable: Sized {
+pub trait Executable {
     fn execute(&self, state: &mut CpuState);
 }
 
