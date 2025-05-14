@@ -20,6 +20,10 @@ mod parsers;
 
 type Opcode = u8;
 
+pub trait Executable {
+    fn execute(&self, state: &mut CpuState);
+}
+
 #[rustfmt::skip]
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
