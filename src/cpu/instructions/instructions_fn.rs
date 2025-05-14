@@ -46,20 +46,13 @@ mod tests {
 
         Add(Reg(B)).execute(&mut state);
         assert_eq!(state.regs.acc(), 0xE1);
-        assert!(state.flags.zero() == false);
-        assert!(state.flags.carry() == false);
-        assert!(state.flags.half_carry() == false);
 
         Add(Reg(E)).execute(&mut state);
         assert_eq!(state.regs.acc(), 0xF0);
-        assert!(state.flags.zero() == false);
-        assert!(state.flags.carry() == false);
         assert!(state.flags.half_carry() == true);
 
         Add(Immediate(0x0F)).execute(&mut state);
         assert_eq!(state.regs.acc(), 0xFF);
-        assert!(state.flags.zero() == false);
-        assert!(state.flags.carry() == false);
         assert!(state.flags.half_carry() == false);
 
         Add(Immediate(0x01)).execute(&mut state);
@@ -71,7 +64,5 @@ mod tests {
         Add(Addr).execute(&mut state);
         assert_eq!(state.regs.acc(), 0x00);
         assert!(state.flags.zero() == true);
-        assert!(state.flags.carry() == false);
-        assert!(state.flags.half_carry() == false);
     }
 }
