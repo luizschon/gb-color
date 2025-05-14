@@ -21,7 +21,6 @@ impl Executable for Add {
         let (result, did_overflow) = acc.overflowing_add(operand);
 
         state.flags.set_zero(result == 0);
-        state.flags.clear_subtract();
         state.flags.set_carry(did_overflow);
         // If a half carry occured, the resulting nibble will be less than the
         // operand nibble.

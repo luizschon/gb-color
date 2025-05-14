@@ -33,6 +33,8 @@ pub enum Instruction {
 impl Executable for Instruction {
     fn execute(&self, state: &mut CpuState) {
         use Instruction::*;
+
+        state.flags.clear();
         match self {
             AddInstr(i) => i.execute(state),
         }
