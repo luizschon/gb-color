@@ -1,10 +1,10 @@
 use crate::cpu::{
     CpuState,
-    registers::{Register8, RwRegister},
+    registers::{Reg8, RwRegister},
 };
 
-pub trait Operand<T> {
-    fn get_value(&self, state: &CpuState) -> T;
+pub trait Source<T>: Sized {
+    fn value(&self, state: &CpuState) -> T;
 }
 
 /// Source for 8-bit arithmetic operation, such as the
@@ -14,7 +14,7 @@ pub trait Operand<T> {
 #[derive(Debug, PartialEq)]
 pub enum ArithSource {
     /// An 8-bit register.
-    Reg(Register8),
+    Reg(Reg8),
     /// An 16-bit address into the GameBoy's memory, read from the HL register.
     Addr,
     /// A 8-bit literal.
@@ -27,14 +27,14 @@ impl ArithSource {
         let reg_idx = opcode & 0b00000111;
 
         match reg_idx {
-            0 => Self::Reg(Register8::B),
-            1 => Self::Reg(Register8::C),
-            2 => Self::Reg(Register8::D),
-            3 => Self::Reg(Register8::E),
-            4 => Self::Reg(Register8::H),
-            5 => Self::Reg(Register8::L),
+            0 => Self::Reg(Reg8::B),
+            1 => Self::Reg(Reg8::C),
+            2 => Self::Reg(Reg8::D),
+            3 => Self::Reg(Reg8::E),
+            4 => Self::Reg(Reg8::H),
+            5 => Self::Reg(Reg8::L),
             6 => Self::Addr,
-            7 => Self::Reg(Register8::Acc),
+            7 => Self::Reg(Reg8::Acc),
             _ => unreachable!(),
         }
     }
@@ -44,11 +44,11 @@ impl ArithSource {
     }
 }
 
-impl Operand<u8> for ArithSource {
-    fn get_value(&self, state: &CpuState) -> u8 {
+impl Source<u8> for ArithSource {
+    fn value(&self, state: &CpuState) -> u8 {
         match *self {
             Self::Immediate(imm) => imm,
-            Self::Reg(reg) => reg.read(state),
+            Self::Reg(reg) => reg.read(&state.regs),
             Self::Addr => todo!(),
         }
     }

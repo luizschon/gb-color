@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_add_parse() {
-        use crate::cpu::registers::Register8::*;
+        use crate::cpu::registers::Reg8::*;
         use operands::ArithSource::*;
 
         // add a, r8
