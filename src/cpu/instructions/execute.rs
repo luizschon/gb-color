@@ -1,10 +1,9 @@
 use crate::cpu::CpuState;
 
-use super::operands::{ArithSource, Operand};
-
-pub trait Executable {
-    fn execute(&self, state: &mut CpuState);
-}
+use super::{
+    Executable,
+    operands::{ArithSource, Source},
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Add(pub ArithSource);
@@ -17,7 +16,7 @@ impl Add {
 
 impl Executable for Add {
     fn execute(&self, state: &mut CpuState) {
-        let operand = self.0.get_value(state);
+        let operand = self.0.value(state);
         let acc = state.regs.acc();
         let (result, did_overflow) = acc.overflowing_add(operand);
 
@@ -34,7 +33,7 @@ impl Executable for Add {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cpu::registers::Register8::*;
+    use crate::cpu::registers::Reg8::*;
     use ArithSource::*;
 
     #[test]

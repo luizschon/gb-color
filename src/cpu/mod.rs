@@ -6,8 +6,6 @@ mod registers;
 #[derive(Debug)]
 pub struct CpuState {
     // TODO add memory field
-    pc: usize,
-    sp: usize,
     flags: Flags,
     regs: RawRegisters,
 }
@@ -15,8 +13,6 @@ pub struct CpuState {
 impl CpuState {
     pub fn new() -> Self {
         Self {
-            pc: 0,
-            sp: 0,
             flags: Default::default(),
             regs: Default::default(),
         }
