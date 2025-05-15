@@ -160,7 +160,7 @@ impl RwRegister<u16> for Reg16 {
 
 /// Representation of the flags register of the GameBoy's CPU.
 ///
-/// | Bit 7 | Bit 6       | Bit 5      | Bit 5   | Bits 4-0      |
+/// | Bit 7 | Bit 6       | Bit 5      | Bit 4   | Bits 3-0      |
 /// |-------|-------------|------------|---------|---------------|
 /// | Zero  | Subtraction | Half-carry | Carry   | Unused (zero) |
 ///

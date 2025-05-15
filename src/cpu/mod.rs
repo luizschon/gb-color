@@ -3,19 +3,17 @@ use registers::{Flags, RawRegisters};
 mod instructions;
 mod registers;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CpuState {
     // TODO add memory field
+    pc: u16,
     flags: Flags,
     regs: RawRegisters,
 }
 
 impl CpuState {
     pub fn new() -> Self {
-        Self {
-            flags: Default::default(),
-            regs: Default::default(),
-        }
+        Default::default()
     }
     // fn fetch_instruction(&self) -> Instruction {
     //     Instruction::from_bytes()

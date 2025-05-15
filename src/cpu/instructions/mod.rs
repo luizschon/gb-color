@@ -13,9 +13,9 @@ use execute::*;
 
 use super::CpuState;
 
+mod decode;
 mod execute;
 mod operands;
-mod parsers;
 
 pub trait Executable {
     fn execute(&self, state: &mut CpuState);
@@ -31,7 +31,6 @@ impl Executable for Instruction {
     fn execute(&self, state: &mut CpuState) {
         use Instruction::*;
 
-        state.flags.clear();
         match self {
             AddInstr(i) => i.execute(state),
         }
@@ -40,7 +39,7 @@ impl Executable for Instruction {
 
 #[cfg(test)]
 mod tests {
-    use super::parsers::{Decode, InstructionDecoder};
+    use super::decode::{Decode, InstructionDecoder};
     use super::*;
     use Instruction::*;
 

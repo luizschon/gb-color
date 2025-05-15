@@ -22,10 +22,17 @@ impl Executable for Add {
 
         state.flags.set_zero(result == 0);
         state.flags.set_carry(did_overflow);
+        state.flags.clear_subtract();
         // If a half carry occured, the resulting nibble will be less than the
         // operand nibble.
         state.flags.set_half_carry(result & 0x0F < operand & 0x0F);
 
+        // Increment program counter
+        state.pc += match self.0 {
+            ArithSource::Reg(_) | ArithSource::Addr => 1,
+            ArithSource::Immediate(_) => 2,
+        };
+        // Update Acc
         state.regs.set_acc(result);
     }
 }
