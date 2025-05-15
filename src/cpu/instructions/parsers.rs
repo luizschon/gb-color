@@ -1,6 +1,6 @@
 use super::{
     Instruction::{self, *},
-    instructions_fn::*,
+    execute::*,
     operands::ArithSource,
 };
 
@@ -10,19 +10,19 @@ const BLOCK_3_INSTR_MASK: u8 = 0b00000111;
 const BLOCK_3_INSTR_POS: u8 = 0;
 
 #[derive(Debug, PartialEq)]
-pub enum ParseError {
+pub enum DecodeError {
     Invalid,
 }
 
-pub trait Parse {
+pub trait Decode {
     type Error;
     fn decode(self, bytes: &[u8]) -> Result<Instruction, Self::Error>;
 }
 
 pub struct Block0;
 
-impl Parse for Block0 {
-    type Error = ParseError;
+impl Decode for Block0 {
+    type Error = DecodeError;
 
     fn decode(self, _bytes: &[u8]) -> Result<Instruction, Self::Error> {
         todo!()
@@ -31,8 +31,8 @@ impl Parse for Block0 {
 
 pub struct Block1;
 
-impl Parse for Block1 {
-    type Error = ParseError;
+impl Decode for Block1 {
+    type Error = DecodeError;
 
     fn decode(self, _bytes: &[u8]) -> Result<Instruction, Self::Error> {
         todo!()
@@ -41,12 +41,12 @@ impl Parse for Block1 {
 
 pub struct Block2;
 
-impl Parse for Block2 {
-    type Error = ParseError;
+impl Decode for Block2 {
+    type Error = DecodeError;
 
     fn decode(self, bytes: &[u8]) -> Result<Instruction, Self::Error> {
         let [opcode, ..] = bytes else {
-            return Err(ParseError::Invalid);
+            return Err(DecodeError::Invalid);
         };
 
         // The opcode without the bits encoding the block and the source register.
@@ -63,12 +63,12 @@ impl Parse for Block2 {
 
 pub struct Block3;
 
-impl Parse for Block3 {
-    type Error = ParseError;
+impl Decode for Block3 {
+    type Error = DecodeError;
 
     fn decode(self, bytes: &[u8]) -> Result<Instruction, Self::Error> {
         let [opcode, immediate, ..] = bytes else {
-            return Err(ParseError::Invalid);
+            return Err(DecodeError::Invalid);
         };
 
         // Arithmetic operations in block 3 ends with 110.
@@ -93,53 +93,53 @@ impl Parse for Block3 {
 
 pub struct Prefixed;
 
-impl Parse for Prefixed {
-    type Error = ParseError;
+impl Decode for Prefixed {
+    type Error = DecodeError;
 
     fn decode(self, _bytes: &[u8]) -> Result<Instruction, Self::Error> {
         todo!()
     }
 }
 
-pub enum InstructionParser {
-    Block0Parser(Block0),
-    Block1Parser(Block1),
-    Block2Parser(Block2),
-    Block3Parser(Block3),
-    PrefixedParser(Prefixed),
+pub enum InstructionDecoder {
+    Block0Decoder(Block0),
+    Block1Decoder(Block1),
+    Block2Decoder(Block2),
+    Block3Decoder(Block3),
+    PrefixedDecoder(Prefixed),
 }
 
 type Opcode = u8;
 
-impl From<Opcode> for InstructionParser {
+impl From<Opcode> for InstructionDecoder {
     fn from(opcode: Opcode) -> Self {
         let block = (opcode & 0xC0) >> 6;
         let is_prefixed = opcode == 0xCB;
 
         if is_prefixed {
-            return Self::PrefixedParser(Prefixed);
+            return Self::PrefixedDecoder(Prefixed);
         }
 
         match block {
-            0 => Self::Block0Parser(Block0),
-            1 => Self::Block1Parser(Block1),
-            2 => Self::Block2Parser(Block2),
-            3 => Self::Block3Parser(Block3),
+            0 => Self::Block0Decoder(Block0),
+            1 => Self::Block1Decoder(Block1),
+            2 => Self::Block2Decoder(Block2),
+            3 => Self::Block3Decoder(Block3),
             _ => unreachable!(),
         }
     }
 }
 
-impl Parse for InstructionParser {
-    type Error = ParseError;
+impl Decode for InstructionDecoder {
+    type Error = DecodeError;
 
     fn decode(self, rom_slice: &[u8]) -> Result<Instruction, Self::Error> {
         match self {
-            Self::Block0Parser(p) => p.decode(rom_slice),
-            Self::Block1Parser(p) => p.decode(rom_slice),
-            Self::Block2Parser(p) => p.decode(rom_slice),
-            Self::Block3Parser(p) => p.decode(rom_slice),
-            Self::PrefixedParser(p) => p.decode(rom_slice),
+            Self::Block0Decoder(p) => p.decode(rom_slice),
+            Self::Block1Decoder(p) => p.decode(rom_slice),
+            Self::Block2Decoder(p) => p.decode(rom_slice),
+            Self::Block3Decoder(p) => p.decode(rom_slice),
+            Self::PrefixedDecoder(p) => p.decode(rom_slice),
         }
     }
 }

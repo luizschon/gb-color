@@ -9,11 +9,11 @@
 //! | 2     | 1            | 0            | X X X X X X     |
 //! | 3     | 1            | 1            | X X X X X X     |
 
-use instructions_fn::*;
+use execute::*;
 
 use super::CpuState;
 
-mod instructions_fn;
+mod execute;
 mod operands;
 mod parsers;
 
@@ -40,7 +40,7 @@ impl Executable for Instruction {
 
 #[cfg(test)]
 mod tests {
-    use super::parsers::{InstructionParser, Parse};
+    use super::parsers::{Decode, InstructionDecoder};
     use super::*;
     use Instruction::*;
 
@@ -50,17 +50,17 @@ mod tests {
         use operands::ArithSource::*;
 
         // add a, r8
-        let i = InstructionParser::from(0x80).decode(&[0x80]);
+        let i = InstructionDecoder::from(0x80).decode(&[0x80]);
         assert_eq!(i, Ok(AddInstr(Add(Reg(B)))));
-        let i = InstructionParser::from(0x87).decode(&[0x87]);
+        let i = InstructionDecoder::from(0x87).decode(&[0x87]);
         assert_eq!(i, Ok(AddInstr(Add(Reg(Acc)))));
-        let i = InstructionParser::from(0x86).decode(&[0x86]);
+        let i = InstructionDecoder::from(0x86).decode(&[0x86]);
         assert_eq!(i, Ok(AddInstr(Add(Addr))));
 
         // add a, imm8
-        let i = InstructionParser::from(0xC6).decode(&[0xC6, 0xFF]);
+        let i = InstructionDecoder::from(0xC6).decode(&[0xC6, 0xFF]);
         assert_eq!(i, Ok(AddInstr(Add(Immediate(0xFF)))));
-        let i = InstructionParser::from(0xC6).decode(&[0xC6, 0xAB]);
+        let i = InstructionDecoder::from(0xC6).decode(&[0xC6, 0xAB]);
         assert_eq!(i, Ok(AddInstr(Add(Immediate(0xAB)))));
     }
 }
