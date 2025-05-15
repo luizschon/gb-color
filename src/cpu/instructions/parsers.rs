@@ -13,6 +13,7 @@ const BLOCK_3_INSTR_POS: u8 = 0;
 pub enum ParseError {
     Invalid,
 }
+
 pub trait Parse {
     type Error;
     fn decode(self, bytes: &[u8]) -> Result<Instruction, Self::Error>;
@@ -97,5 +98,48 @@ impl Parse for Prefixed {
 
     fn decode(self, _bytes: &[u8]) -> Result<Instruction, Self::Error> {
         todo!()
+    }
+}
+
+pub enum InstructionParser {
+    Block0Parser(Block0),
+    Block1Parser(Block1),
+    Block2Parser(Block2),
+    Block3Parser(Block3),
+    PrefixedParser(Prefixed),
+}
+
+type Opcode = u8;
+
+impl From<Opcode> for InstructionParser {
+    fn from(opcode: Opcode) -> Self {
+        let block = (opcode & 0xC0) >> 6;
+        let is_prefixed = opcode == 0xCB;
+
+        if is_prefixed {
+            return Self::PrefixedParser(Prefixed);
+        }
+
+        match block {
+            0 => Self::Block0Parser(Block0),
+            1 => Self::Block1Parser(Block1),
+            2 => Self::Block2Parser(Block2),
+            3 => Self::Block3Parser(Block3),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Parse for InstructionParser {
+    type Error = ParseError;
+
+    fn decode(self, rom_slice: &[u8]) -> Result<Instruction, Self::Error> {
+        match self {
+            Self::Block0Parser(p) => p.decode(rom_slice),
+            Self::Block1Parser(p) => p.decode(rom_slice),
+            Self::Block2Parser(p) => p.decode(rom_slice),
+            Self::Block3Parser(p) => p.decode(rom_slice),
+            Self::PrefixedParser(p) => p.decode(rom_slice),
+        }
     }
 }

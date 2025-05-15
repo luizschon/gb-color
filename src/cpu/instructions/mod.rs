@@ -10,15 +10,12 @@
 //! | 3     | 1            | 1            | X X X X X X     |
 
 use instructions_fn::*;
-use parsers::Parse;
 
 use super::CpuState;
 
 mod instructions_fn;
 mod operands;
 mod parsers;
-
-type Opcode = u8;
 
 pub trait Executable {
     fn execute(&self, state: &mut CpuState);
@@ -41,50 +38,9 @@ impl Executable for Instruction {
     }
 }
 
-pub enum InstructionParser {
-    Block0Parser(parsers::Block0),
-    Block1Parser(parsers::Block1),
-    Block2Parser(parsers::Block2),
-    Block3Parser(parsers::Block3),
-    PrefixedParser(parsers::Prefixed),
-}
-
-impl From<Opcode> for InstructionParser {
-    fn from(opcode: Opcode) -> Self {
-        let block = (opcode & 0xC0) >> 6;
-        let is_prefixed = opcode == 0xCB;
-
-        if is_prefixed {
-            return Self::PrefixedParser(parsers::Prefixed);
-        }
-
-        match block {
-            0 => Self::Block0Parser(parsers::Block0),
-            1 => Self::Block1Parser(parsers::Block1),
-            2 => Self::Block2Parser(parsers::Block2),
-            3 => Self::Block3Parser(parsers::Block3),
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl Parse for InstructionParser {
-    type Error = parsers::ParseError;
-
-    fn decode(self, rom_slice: &[u8]) -> Result<Instruction, Self::Error> {
-        match self {
-            Self::Block0Parser(p) => p.decode(rom_slice),
-            Self::Block1Parser(p) => p.decode(rom_slice),
-            Self::Block2Parser(p) => p.decode(rom_slice),
-            Self::Block3Parser(p) => p.decode(rom_slice),
-            Self::PrefixedParser(p) => p.decode(rom_slice),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-
+    use super::parsers::{InstructionParser, Parse};
     use super::*;
     use Instruction::*;
 
