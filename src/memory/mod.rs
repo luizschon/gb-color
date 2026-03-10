@@ -1,11 +1,14 @@
 use paste::paste;
 
+mod rom;
+
 macro_rules! declare_memory_sections {
     ($($NAME:ident: $stt:literal to $end:literal),*) => {
         paste! {
             $(
                 const [<$NAME _START>]: u16 = $stt;
                 const [<$NAME _END>]: u16 = $end;
+                const [<$NAME _SIZE>]: usize = $end - $stt + 1;
             )*
         }
     };
@@ -21,5 +24,48 @@ declare_memory_sections!(
     HRAM:        0xFF80 to 0xFFFE, INT_EN:      0xFFFF to 0xFFFF
 );
 
+pub enum MemoryError {
+    ReadOnly,
+    Prohibited,
+}
+
 #[derive(Debug)]
-struct MemoryController;
+pub struct MemoryController {}
+
+impl MemoryController {
+    pub fn read(&self, addr: u16) -> Result<u8, MemoryError> {
+        let data = match addr {
+            ROM_BANK_0_START..=ROM_BANK_0_END => 0x00,
+            ROM_BANK_N_START..=ROM_BANK_N_END => 0x00,
+            VRAM_START..=VRAM_END => 0x00,
+            EXT_RAM_START..=EXT_RAM_END => 0x00,
+            WRAM_BANK_0_START..=WRAM_BANK_0_END => 0x00,
+            WRAM_BANK_N_START..=WRAM_BANK_N_END => 0x00,
+            ECHO_RAM_START..=ECHO_RAM_END => 0x00,
+            OAM_START..=OAM_END => 0x00,
+            _RESERVED_START..=_RESERVED_END => Err(MemoryError::Prohibited)?,
+            IO_REGS_START..=IO_REGS_END => 0x00,
+            HRAM_START..=HRAM_END => 0x00,
+            INT_EN_START..=INT_EN_END => 0x00,
+        };
+        Ok(data)
+    }
+
+    pub fn write(&self, addr: u16, _data: u8) -> Result<(), MemoryError> {
+        match addr {
+            ROM_BANK_0_START..=ROM_BANK_0_END => 0x00,
+            ROM_BANK_N_START..=ROM_BANK_N_END => 0x00,
+            VRAM_START..=VRAM_END => 0x00,
+            EXT_RAM_START..=EXT_RAM_END => 0x00,
+            WRAM_BANK_0_START..=WRAM_BANK_0_END => 0x00,
+            WRAM_BANK_N_START..=WRAM_BANK_N_END => 0x00,
+            ECHO_RAM_START..=ECHO_RAM_END => 0x00,
+            OAM_START..=OAM_END => 0x00,
+            _RESERVED_START..=_RESERVED_END => Err(MemoryError::Prohibited)?,
+            IO_REGS_START..=IO_REGS_END => 0x00,
+            HRAM_START..=HRAM_END => 0x00,
+            INT_EN_START..=INT_EN_END => 0x00,
+        };
+        Ok(())
+    }
+}
